@@ -178,7 +178,7 @@ class LogStash::Inputs::S3 < LogStash::Inputs::Base
   # @param [Queue] Where to push the event
   # @param [String] Which file to read from
   # @return [Boolean] True if the file was completely read, false otherwise.
-  def process_local_log(queue, filename)
+  def process_local_log(queue, filename, key)
     @logger.debug('Processing file', :filename => filename)
 
     metadata = {}
@@ -209,7 +209,7 @@ class LogStash::Inputs::S3 < LogStash::Inputs::Base
 
           event["cloudfront_version"] = metadata[:cloudfront_version] unless metadata[:cloudfront_version].nil?
           event["cloudfront_fields"]  = metadata[:cloudfront_fields] unless metadata[:cloudfront_fields].nil?
-
+          event["path"] = key
           queue << event
         end
       end
@@ -319,7 +319,7 @@ class LogStash::Inputs::S3 < LogStash::Inputs::Base
     filename = File.join(temporary_directory, File.basename(key))
     
     if download_remote_file(object, filename)
-      if process_local_log(queue, filename)
+      if process_local_log(queue, filename, key)
         lastmod = object.last_modified
         backup_to_bucket(object, key)
         backup_to_dir(filename)
